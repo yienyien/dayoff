@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 
 
@@ -9,8 +10,8 @@ class Team(models.Model):
     slugname = models.CharField(max_length=5, primary_key=True)
     fullname = models.CharField(max_length=256)
 
-    description = models.TextField()
-    icones = models.ImageField()
+    description = models.TextField(null=True, blank=True)
+    icones = models.ImageField(null=True, blank=True)
 
 
 class UserProfile(models.Model):
@@ -19,4 +20,9 @@ class UserProfile(models.Model):
 
     """
     # we authorize a profile without team
-    team = models.ForeignKey(Team, on_delete=models.PROTECT, null=True, blank=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.PROTECT,
+        null=True, blank=True
+    )
