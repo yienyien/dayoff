@@ -24,6 +24,14 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
 
+class TeamSerializer(serializers.ModelSerializer):
+    """
+    Team serializer
+    """
+    class Meta:
+        model = models.Team
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for a user profile object and
