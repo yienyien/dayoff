@@ -19,9 +19,11 @@ from django.urls import path, include
 from rest_framework import routers
 
 from userprofiles.urls import router as users_router
+from vacations.urls import router as vacations_router
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.registry.extend(users_router.registry)
+router.registry.extend(vacations_router.registry)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
