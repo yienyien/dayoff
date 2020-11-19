@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("username", "email", "first_name", "last_name" "password")
+        fields = ("username", "email", "first_name", "last_name", "password")
         extra_kwargs = {"password": {"write_only": True}}
 
 
@@ -24,18 +24,51 @@ class TeamSerializer(serializers.ModelSerializer):
         model = models.Team
 
 
-class ProfileSerializer(serializers.ModelSerializer):
-    """
-    Serializer for a user profile object and
-    django user native object
-    """
-
-    user = UserSerializer()
+class PublicProfileSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source="user.first_name")
+    last_name = serializers.CharField(source="user.last_name")
+    email = serializers.EmailField(source="user.email")
 
     class Meta:
         model = models.UserProfile
-        fields = ("uid", "user", "team", "token")
-        extra_kwargs = {"uid": {"read_only": True}, "token": {"read_only": True}}
+        fields = ("uid", "first_name", "last_name", "email", "team")
+        extra_kwargs = {"uid": {"read_only": True}}
+
+
+USER_FIELDS = ("username", "first_name", "last_name", "email")
+
+
+class ProfileSerializer(PublicProfileSerializer):
+    username = serializers.CharField(source="user.username")
+    password = serializers.CharField(source="user.password", write_only=True)
+    token = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = models.UserProfile
+        fields = (
+            "uid",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "team",
+            "token",
+            "password",
+        )
+        extra_kwargs = {"uid": {"read_only": True}}
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop("user")
+
+        for attr, value in user_data.items():
+            setattr(instance.user, attr, value)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.user.save()
+        instance.save()
+        return instance
 
     def create(self, validated_data):
         """
@@ -43,8 +76,8 @@ class ProfileSerializer(serializers.ModelSerializer):
         create django user, token and set the password
         """
         user_data = validated_data.pop("user")
-
         password = user_data.pop("password")
+
         user = User(**user_data)
         user.set_password(password)
         user.save()
