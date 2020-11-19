@@ -17,6 +17,9 @@ class Team(models.Model):
     description = models.TextField(null=True, blank=True)
     icones = models.ImageField(null=True, blank=True)
 
+    def __str__(self):
+        return self.fullname
+
 
 class UserProfile(models.Model):
     """
@@ -33,3 +36,8 @@ class UserProfile(models.Model):
     # Good for a frontend or an external web service.
     token = models.ForeignKey(Token, on_delete=models.SET_NULL, null=True, blank=True)
     team = models.ForeignKey(Team, on_delete=models.PROTECT, null=True, blank=True)
+
+    def __str__(self):
+        name = self.user.first_name + " " + self.user.last_name
+
+        return self.user if (name == " ") else name
