@@ -16,7 +16,7 @@ class Vacation(models.Model):
 
     DLEAVE = dict(LEAVE)
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="vacations")
     type = models.CharField(max_length=1, choices=LEAVE, default=LEAVE_PAID_NORM)
 
     start = models.DateField()
