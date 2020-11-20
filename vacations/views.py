@@ -24,6 +24,11 @@ class IsOwner(permissions.BasePermission):
 
 
 class VacationViewSet(viewsets.ModelViewSet):
+    """
+    Manage vacations: create, list, update, delete
+    If not admin, only manipulates its own vacations.
+    """
+
     queryset = models.Vacation.objects.all()
     serializer_class = serializers.VacationSerializer
     permission_classes = [IsAdminUser | IsOwner]
@@ -50,6 +55,10 @@ class VacationViewSet(viewsets.ModelViewSet):
 
 
 class Filter:
+    """
+    Helper class to filter vacation by dates
+    """
+
     DATE = "date"
 
     def __init__(self, query_params):
@@ -79,6 +88,21 @@ class Filter:
 
 
 class ListUsers(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """
+    A resource that filters vacation according to the query parameters.
+
+    date format: 2020-11-01
+
+    query parameters:
+    * start_after: get only vacations start after this date
+    * start_before: get only vacations start before this date
+    * end_after: get only vacations end after this date
+    * end_before: get only vacations end before this date
+    * type: get vacations with this type (U=Unpaid, R=RTT, N=Normal)
+    * user: get vacations for this user (uuid)
+    * team: get vacations for this team (slugname)
+    """
+
     permission_classes = [permissions.IsAdminUser]
     serializer_class = serializers.QueryResultSerializer
 
@@ -90,6 +114,7 @@ class ListUsers(mixins.ListModelMixin, viewsets.GenericViewSet):
         filters.dvacations("end", "gte", "end_after")
         filters.dvacations("end", "lte", "end_before")
         filters.vacations("type", "eq", "type")
+        filters.vacations("__user__profile", "eq", "user")
         filters.vacations("__user__team", "eq", "team")
 
         vacations = models.Vacation.objects.filter(filters.query)
@@ -111,16 +136,22 @@ class ListUsers(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 
 class Compare(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """
+    Return all vacations that overlap between two employees.
+
+    query parameters:
+    * user_a: first employee UUID
+    * user_b: second employee UUID
+    """
+
     permission_classes = [permissions.IsAdminUser]
     serializer_class = serializers.VacationSerializer
 
     def get_queryset(self):
-        start = self.request.query_params.get("start", None)
-        end = self.request.query_params.get("end", None)
         user_a = self.request.query_params.get("user_a", None)
         user_b = self.request.query_params.get("user_b", None)
 
-        if None in [start, end, user_a, user_b]:
+        if None in [user_a, user_b]:
             raise ParseError()
 
         vac_a = models.Vacation.objects.filter(user__profile__pk=user_a)

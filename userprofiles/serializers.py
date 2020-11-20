@@ -14,12 +14,21 @@ class TeamSerializer(serializers.ModelSerializer):
 
 
 class AbstractProfileSerializer(serializers.ModelSerializer):
+    """
+    Basic fields serialization for profile
+    """
+
     first_name = serializers.CharField(source="user.first_name")
     last_name = serializers.CharField(source="user.last_name")
     email = serializers.EmailField(source="user.email")
 
 
 class PublicProfileSerializer(AbstractProfileSerializer):
+    """
+    Manipulate profiles, enable creation with password and username
+    but just write_only
+    """
+
     password = serializers.CharField(source="user.password", write_only=True)
     username = serializers.CharField(source="user.username", write_only=True)
 
@@ -37,6 +46,10 @@ class PublicProfileSerializer(AbstractProfileSerializer):
         extra_kwargs = {"uid": {"read_only": True}}
 
     def update(self, instance, validated_data):
+        """
+        update must be overriden to use the dot access
+        the in write actions (save and update)
+        """
         user_data = validated_data.pop("user")
 
         for attr, value in user_data.items():
@@ -71,8 +84,11 @@ class PublicProfileSerializer(AbstractProfileSerializer):
 
 
 class ProfileSerializer(PublicProfileSerializer):
-    username = serializers.CharField(source="user.username")
+    """
+    For admin, serialize username and api token
+    """
 
+    username = serializers.CharField(source="user.username")
     token = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:

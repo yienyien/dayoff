@@ -6,6 +6,10 @@ from . import serializers
 
 
 class IsAdminUser(permissions.IsAdminUser):
+    """
+    By default IsAdminUser does not block the object access
+    """
+
     def has_object_permission(self, request, view, profile):
         return bool(request.user and request.user.is_staff)
 
@@ -13,7 +17,6 @@ class IsAdminUser(permissions.IsAdminUser):
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
     Object-level permission to only allow owners of an object to edit it.
-    Assumes the model instance has an `owner` attribute.
     """
 
     def has_object_permission(self, request, view, profile):
@@ -24,12 +27,25 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
 
 class AnonymousCreate(permissions.BasePermission):
+    """
+    If you want to enable anonymous creation (vs admin), add this
+    the permission_classes list in UserProfileViewSet
+    """
+
     def has_permission(self, request, view):
         if request.method == "POST":
             return True
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
+    """
+    Manage users: create, list, update, delete
+    Admin only for mutable actions, public view for anonymous
+
+    query parameters:
+    * team: filter by team
+    """
+
     queryset = models.UserProfile.objects.all()
     permission_classes = [IsAdminUser | IsOwnerOrReadOnly]
 

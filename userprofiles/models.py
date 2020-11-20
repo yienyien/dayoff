@@ -24,7 +24,6 @@ class Team(models.Model):
 class UserProfile(models.Model):
     """
     Profile is a new table to extend native django user.
-
     """
 
     # UUID is a good handler for API manipulation and data migration
