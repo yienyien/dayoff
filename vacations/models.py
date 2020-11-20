@@ -1,5 +1,9 @@
+import logging
+from uuid import uuid4
+
 from django.core.exceptions import ValidationError
 from django.db import models
+
 from django.contrib.auth.models import User
 
 
@@ -16,6 +20,8 @@ class Vacation(models.Model):
 
     DLEAVE = dict(LEAVE)
 
+    uid = models.UUIDField(default=uuid4, primary_key=True)
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="vacations")
     type = models.CharField(max_length=1, choices=LEAVE, default=LEAVE_PAID_NORM)
 
@@ -27,6 +33,8 @@ class Vacation(models.Model):
             raise ValidationError("The end date must be after the start date")
 
     def save(self, *args, **kwargs):
+        self.start = kwargs.get("start", self.start)
+        self.end = kwargs.get("end", self.end)
         self.full_clean()
         super().save(*args, **kwargs)
 
