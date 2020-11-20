@@ -1,19 +1,15 @@
-import datetime
 import dateutil.parser
 from dateutil.parser import ParserError as ParserError
 
 
-from django.contrib.auth.models import User
 from django.db.models import Q
 
 from rest_framework import viewsets, permissions
-from rest_framework.views import APIView
 from rest_framework import mixins
 from rest_framework.exceptions import ParseError
 
 from . import models
 from . import serializers
-from userprofiles import serializers as user_serializers
 from userprofiles import models as user_models
 
 
@@ -49,21 +45,19 @@ class VacationViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         if not self.request.user.is_staff:
             serializer.save(user=self.request.user)
+        else:
+            serializer.save()
 
 
-class UserFilter:
+class Filter:
     DATE = "date"
 
     def __init__(self, query_params):
         self.query_params = query_params
         self.query = Q()
-        value = self.query_params.get("team", None)
-        self.types = dict(models.Vacation.LEAVE)
-        if value is not None:
-            self.query &= Q(team=value)
 
     def __parse(self, value, parser):
-        if parser == UserFilter.DATE:
+        if parser == Filter.DATE:
             try:
                 return dateutil.parser.parse(value)
             except ParserError:
@@ -74,33 +68,43 @@ class UserFilter:
         value = self.query_params.get(param, None)
         if value is not None:
             value = self.__parse(value, parser)
-            key = "user__vacations__" + key
             if operator != "eq":
                 key += "__" + operator
             kwargs = {key: value}
-            print(kwargs)
             self.query &= Q(**kwargs)
 
     def dvacations(self, *args, **kwargs):
-        kwargs["parser"] = UserFilter.DATE
+        kwargs["parser"] = Filter.DATE
         self.vacations(*args, **kwargs)
 
 
 class ListUsers(mixins.ListModelMixin, viewsets.GenericViewSet):
     permission_classes = [permissions.IsAdminUser]
-    serializer_class = user_serializers.ProfileSerializer
+    serializer_class = serializers.QueryResultSerializer
 
     def get_queryset(self):
 
-        # TODO: parse date
-        filters = UserFilter(self.request.query_params)
+        filters = Filter(self.request.query_params)
         filters.dvacations("start", "gte", "start_after")
         filters.dvacations("start", "lte", "start_before")
         filters.dvacations("end", "gte", "end_after")
         filters.dvacations("end", "lte", "end_before")
         filters.vacations("type", "eq", "type")
+        filters.vacations("__user__team", "eq", "team")
 
-        profiles = user_models.UserProfile.objects.all()
-        profiles = profiles.filter(filters.query)
+        vacations = models.Vacation.objects.filter(filters.query)
+
+        counts = dict()
+        for vac in vacations:
+            user_count = counts.setdefault(vac.user.pk, {"R": 0, "U": 0, "N": 0})
+            count = user_count.get(vac.type, 0)
+            count += (vac.end - vac.start).days
+            user_count[vac.type] = count
+
+        profiles = user_models.UserProfile.objects.filter(
+            user__pk__in=counts.keys()
+        ).order_by("pk")
+        for profile in profiles:
+            profile.counts = counts[profile.user.pk]
 
         return profiles
