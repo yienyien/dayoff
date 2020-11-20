@@ -69,3 +69,5 @@ The API features are:
 
 ## TODO
 * Documentation on JSON API Schema
+* The employee comparaison return all overlap vacation and not the
+  number of days when they will be both on vacation
