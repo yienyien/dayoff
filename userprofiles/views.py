@@ -31,7 +31,7 @@ class AnonymousCreate(permissions.BasePermission):
 
 class UserProfileViewSet(viewsets.ModelViewSet):
     queryset = models.UserProfile.objects.all()
-    permission_classes = [IsAdminUser | IsOwnerOrReadOnly | AnonymousCreate]
+    permission_classes = [IsAdminUser | IsOwnerOrReadOnly]
 
     def get_queryset(self):
         team = self.request.query_params.get("team", None)
