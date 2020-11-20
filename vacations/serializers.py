@@ -79,3 +79,14 @@ class VacationSerializer(MyVacationSerializer):
 
     def get_user(self, obj):
         return str(obj.user)
+
+
+class QueryResultSerializer(userprofile_serializers.AbstractProfileSerializer):
+    counts = serializers.SerializerMethodField()
+
+    class Meta:
+        model = userprofile_models.UserProfile
+        fields = ("uid", "first_name", "last_name", "email", "team", "counts")
+
+    def get_counts(self, obj):
+        return obj.counts

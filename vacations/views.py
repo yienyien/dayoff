@@ -108,3 +108,34 @@ class ListUsers(mixins.ListModelMixin, viewsets.GenericViewSet):
             profile.counts = counts[profile.user.pk]
 
         return profiles
+
+
+class Compare(mixins.ListModelMixin, viewsets.GenericViewSet):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = serializers.VacationSerializer
+
+    def get_queryset(self):
+        start = self.request.query_params.get("start", None)
+        end = self.request.query_params.get("end", None)
+        user_a = self.request.query_params.get("user_a", None)
+        user_b = self.request.query_params.get("user_b", None)
+
+        if None in [start, end, user_a, user_b]:
+            raise ParseError()
+
+        vac_a = models.Vacation.objects.filter(user__profile__pk=user_a)
+
+        overlaps = models.Vacation.objects.none()
+
+        for vac in vac_a:
+            overlap = serializers.get_overlaps(vac.start, vac.end)
+            overlap = overlap.filter(user__profile__pk=user_b)
+
+            overlaps = overlaps.union(overlap)
+            if overlap.count() == 0:
+                vac_a.exclude(pk=vac.pk)
+
+        overlaps = overlaps.union(vac_a)
+
+        overlaps = overlaps.order_by("start")
+        return overlaps
