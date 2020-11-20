@@ -4,17 +4,6 @@ from . import models
 from rest_framework.authtoken.models import Token
 
 
-class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializer for a native django user object
-    """
-
-    class Meta:
-        model = User
-        fields = ("username", "email", "first_name", "last_name", "password")
-        extra_kwargs = {"password": {"write_only": True}}
-
-
 class TeamSerializer(serializers.ModelSerializer):
     """
     Team serializer
@@ -24,36 +13,26 @@ class TeamSerializer(serializers.ModelSerializer):
         model = models.Team
 
 
-class PublicProfileSerializer(serializers.ModelSerializer):
+class AbstractProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="user.first_name")
     last_name = serializers.CharField(source="user.last_name")
     email = serializers.EmailField(source="user.email")
 
-    class Meta:
-        model = models.UserProfile
-        fields = ("uid", "first_name", "last_name", "email", "team")
-        extra_kwargs = {"uid": {"read_only": True}}
 
-
-USER_FIELDS = ("username", "first_name", "last_name", "email")
-
-
-class ProfileSerializer(PublicProfileSerializer):
-    username = serializers.CharField(source="user.username")
+class PublicProfileSerializer(AbstractProfileSerializer):
     password = serializers.CharField(source="user.password", write_only=True)
-    token = serializers.PrimaryKeyRelatedField(read_only=True)
+    username = serializers.CharField(source="user.username", write_only=True)
 
     class Meta:
         model = models.UserProfile
         fields = (
             "uid",
-            "username",
             "first_name",
             "last_name",
             "email",
             "team",
-            "token",
             "password",
+            "username",
         )
         extra_kwargs = {"uid": {"read_only": True}}
 
@@ -89,3 +68,23 @@ class ProfileSerializer(PublicProfileSerializer):
         )
 
         return profile
+
+
+class ProfileSerializer(PublicProfileSerializer):
+    username = serializers.CharField(source="user.username")
+
+    token = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = models.UserProfile
+        fields = (
+            "uid",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "team",
+            "token",
+            "password",
+        )
+        extra_kwargs = {"uid": {"read_only": True}}

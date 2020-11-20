@@ -30,7 +30,7 @@ class UserProfile(models.Model):
     # UUID is a good handler for API manipulation and data migration
     uid = models.UUIDField(primary_key=True, default=uuid4)
     # we authorize a profile without team
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
 
     # Each user can be access to its data with a API key
     # Good for a frontend or an external web service.
