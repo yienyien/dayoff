@@ -35,6 +35,8 @@ The API helps manage vacations including:
 * Endpoints to interact with features
 
 The API features are:
+
+
 * Create employees
 * Create, update and delete vacations
 * Search for employees on vacation given various parameters
@@ -42,3 +44,28 @@ The API features are:
   Only works with vacations of the same type, else it will fail.
 * Searching should also return the number of vacation days for each employee (given the search parameters).
 * Compare two employees and return the days they will be both on vacation
+
+
+# Release Note 1.0 (Aurélien Moreau)
+
+## Notes
+* Usage of Django Rest Framework (DRF) + Django
+* Enable browsable API http://localhost/api/1/
+* Enable minimal login http://localhost/account/login
+* Enable admin interface http://localhost/admin
+* An anonymous user can create a new profile/user (POST http://localhost/api/1/users as admin)
+
+## Features
+* Create employees: POST http://localhost/api/1/users
+* Create, update and delete vacations: POST, PATCH, DELETE http://localhost/api/1/vacations
+* When creating or updating a vacation, if it overlaps (or is contiguous to) another one, merge them into one.
+  Only works with vacations of the same type, else it will fail.: Done (Check tests)
+* Searching should also return the number of vacation days for each employee (given the search parameters): http://localhost/api/1/queries
+* Compare two employees and return the days they will be both on vacation: http://localhost/api/1/compare
+
+
+## BUGS
+* HTTP code return when create an overlap vacation must not be 201
+
+## TODO
+* Documentation on JSON API Schema
